@@ -5,7 +5,7 @@ import 'mafs/font.css';
 
 export default function Stage4Elimination({ onComplete }) {
   const [step, setStep] = useState(0);
-  const [prediction, setPrediction] = useState(null);
+  const [, setPrediction] = useState(null);
   const [completed, setCompleted] = useState(false);
 
   const handleNext = () => {
