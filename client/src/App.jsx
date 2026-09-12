@@ -44863,7 +44863,7 @@ function App() {
     polygym: PolyGymApp,           // Polynomials Gym — arithmetic → monomial algebra (MCQ)
     treasurehunt: TreasureHuntApp, // Treasure Hunt — solve & seek grid game
     // matrixmystics mode removed — Matrix Mystics content now embedded in LinearAlgebraApp's mission quiz
-    trackProgress: null,
+    trackProgress: ProgressTrackerApp,
     riddle: RiddleApp,              // Math Riddles
     'water-jug-lab': WaterJugLab,
     'equation-crafting-lab': EquationCraftingLab,
@@ -44943,10 +44943,6 @@ function App() {
           }}
         />
       );
-    }
-
-    if (mode === 'trackProgress') {
-      return <ProgressTrackerApp onBack={() => setMode(null)} />;
     }
 
     if (ActiveApp) {
