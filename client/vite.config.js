@@ -162,7 +162,7 @@ export default defineConfig({
       '/log-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/diff-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/bases-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
-      '/circle-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
+      '/circleth-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/integ-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/stdform-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },
       '/bounds-api': { target: 'http://127.0.0.1:4000', changeOrigin: true },

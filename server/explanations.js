@@ -725,7 +725,7 @@ function generateExplanation(req, data) {
   }
 
   // ── Circle Theorems ───────────────────────────────────────────
-  if (p.includes('circle-api')) {
+  if (p.includes('circleth-api')) {
     let s = `Problem: ${b.prompt || b.display || 'Find the angle'}\n\n`;
     s += `Circle Theorems:\n`;
     s += `• Angle at centre = 2 × angle at circumference\n`;

@@ -134,12 +134,12 @@ It is built to run on a single VPS — `tenali.fun` — with one Node process se
 <p align="center">
   <table>
     <tr>
-      <td align="center"><b>1008</b><br/><sub>commits</sub></td>
-      <td align="center"><b>93</b><br/><sub>PRs merged</sub></td>
-      <td align="center"><b>37</b><br/><sub>GitHub contributors</sub></td>
-      <td align="center"><b>⭐ 6</b><br/><sub>stars</sub></td>
-      <td align="center"><b>🍴 74</b><br/><sub>forks</sub></td>
-      <td align="center"><b>🐛 126</b><br/><sub>open issues</sub></td>
+      <td align="center"><b>1031</b><br/><sub>commits</sub></td>
+      <td align="center"><b>103</b><br/><sub>PRs merged</sub></td>
+      <td align="center"><b>41</b><br/><sub>GitHub contributors</sub></td>
+      <td align="center"><b>⭐ 7</b><br/><sub>stars</sub></td>
+      <td align="center"><b>🍴 77</b><br/><sub>forks</sub></td>
+      <td align="center"><b>🐛 129</b><br/><sub>open issues</sub></td>
     </tr>
   </table>
 </p>
@@ -221,8 +221,40 @@ Each quiz instance maintains a float `adaptScore` (0 – 3). Correct answers add
 ### 🔍 3. Detective Agency
 `detective-app.jsx` ships story-driven mystery puzzles — each case is a chain of math clues, solving one unlocks the next.
 
-### 📐 4. Concept Lab
-`conceptPlay.js` + `conceptSession.js` provide a 5-stage concept mastery loop: **Predict → Grid → Guided → Independent → Review**.
+### 📐 4. Concept Playgrounds
+A five-stage conceptual loop that fronts a topic's drill. Two skills ship today:
+
+| Tile | Mode key | Stages |
+|---|---|---|
+| Quadratics: Concept Lab | `qformula-concept` | Predict → Derivation → Guided → Independent → Review |
+| Sim. Equations: Concept Lab | `simul-concept` | Predict → Grid → Precision → Elimination → Cases |
+
+Both are login-gated and reached from the home grid; the existing `qformula` and
+`simul` drill tiles are unchanged and still go straight to the quiz. Finishing the
+stages lands on a completion screen offering **Free Practice**, which opens that
+topic's normal quiz.
+
+**API** (all routes require a Bearer token; the learner is the JWT `sub`, never a
+request parameter):
+
+| Route | Purpose |
+|---|---|
+| `GET /api/concept-session/:skillId/state` | Current stage, grounding score, review schedule, mastery |
+| `POST /api/concept-session/:skillId/session` | Persist a completed stage |
+| `POST /api/concept-session/:skillId/review/start` | Begin a due spaced review |
+| `POST /api/concept-playgrounds/attempt` | Playground struggle telemetry |
+
+**Persistence.** `SkillMasteryState` holds per-learner progress; `QformulaConceptSession`
+and `SimulConceptSession` hold each completed run; `ConceptPlayAttempt` holds telemetry.
+
+Two fields on `SkillMasteryState` are deliberately separate and must stay that way:
+`currentStage` is progress through the stage flow, `conceptReviewRung` is position on
+the spaced-repetition ladder.
+
+**Mastery is server-authoritative.** A completed stage is reported to
+`lil/processAttempt`, the same pipeline every topic quiz uses, so Concept Playgrounds
+is not a separate mastery model. The client renders the mastery value the server
+returns and computes none of its own.
 
 ### 📚 5. Guided Learning Journey
 Linear curriculum with concept checkpoints. Completing one unlocks the next. Server enforces progression via `UserTopicProgress` (locked → blue → bronze → silver → gold).
@@ -231,7 +263,12 @@ Linear curriculum with concept checkpoints. Completing one unlocks the next. Ser
 Wrap any `POST *-api/check` call with `{ solve: true }` and the server returns a step-by-step walkthrough from `generateExplanation()` — covers 50+ puzzle types.
 
 ### 🧠 7. Spaced Repetition
-`lib/spacingLadder.js` promotes recently-missed questions back into rotation, driven by BKT (Bayesian Knowledge Tracing — `lib/bkt.js`).
+`lib/spacingLadder.js` schedules Concept Playground reviews on a `[1, 3, 7, 14, 30]`-day
+ladder. A review that is passed moves the learner one rung up, a failed one moves them
+one rung down, and the next review is scheduled that many days out.
+
+This is **not** BKT-driven. `lib/bkt.js` exists but is not yet wired into the session
+flow; see issue #289.
 
 ### 🛡️ 8. Proctoring System
 Optional exam-mode supervision with webcam + face-api.js emotion detection, focus / tab-switch event logging, and an admin-only `/api/proctor/sessions` dashboard.
@@ -654,19 +691,19 @@ tenali.fun (DNS → <production IP — redacted from public docs>)
 <!-- live-snapshot:start -->
 | 🏆 Commits | 🔀 Merged PRs | 👥 Contributors | 🧩 Puzzles | 📚 Vocab | 🌍 GK |
 |----------:|------------:|--------------:|---------:|-------:|----:|
-| **1008** | **93** | **37** | **69** | **7,662** | **991** |
+| **1031** | **103** | **41** | **69** | **7,662** | **991** |
 <!-- live-snapshot:end -->
 
 ### 🥇 Leaderboard
 
 <!-- live-rank:start -->
-_Live data — last regenerated 2026-09-11 · auto-refreshed by [`github-actions[bot]`](https://github.com/features/actions) on every push to `main` and every 12h._
+_Live data — last regenerated 2026-09-13 · auto-refreshed by [`github-actions[bot]`](https://github.com/features/actions) on every push to `main` and every 12h._
 
 | # | 👤 Real Name | 🔗 GitHub ID | 📝 Commits | 🔀 PRs | 🏷️ Role |
 |--:|:-------------|:-------------|----------:|-----:|:--------|
 | 🥇 | **S. R. S. Iyengar**<br/><sub>↳ also commits as <b>sudarshan</b></sub> | [sudarshansudarshan](https://github.com/sudarshansudarshan) | **281** | 0  | Lead Architect · Curriculum Author · 69 puzzle families |
 | 🥈 | **Mudit Agrawal** | [muditagrawal2007](https://github.com/muditagrawal2007) | **193** | 25  | Maintainer · Battle Arena · Linear Algebra · Sudoku · Playground |
-| 🥉 | **Jinal Gupta** | [jgupta05072003-code](https://github.com/jgupta05072003-code) | **107** | 0  | Upstream Repo Maintainer & PR Reviewer |
+| 🥉 | **Jinal Gupta** | [jgupta05072003-code](https://github.com/jgupta05072003-code) | **120** | 0  | Upstream Repo Maintainer & PR Reviewer |
 | 4. | **Priyanshu Kumar** | [priyanshu7725](https://github.com/priyanshu7725) | **54** | 1  | — |
 | 5. | **Vaibhav Satish**<br/><sub>↳ also commits as <b>Vaibhav</b></sub> | [Vaibhav-sa30](https://github.com/Vaibhav-sa30) | **48** | 3  | Vachana Literacy Lab & Vocabulary |
 | 6. | **Lakshmi Varshini Nandula ** | [varshini-nandula](https://github.com/varshini-nandula) | **43** | 1  | Profile Showcase & Offline Storage |
@@ -685,22 +722,26 @@ _Live data — last regenerated 2026-09-11 · auto-refreshed by [`github-actions
 | 19. | **krishna009-pro**<br/><sub>↳ also commits as <b>Krishna009-pro</b></sub> | [krishna009-pro](https://github.com/krishna009-pro) | **6** | 0  | — |
 | 20. | **SemiColonSlayer** | [sharonyamita-spec](https://github.com/sharonyamita-spec) | **6** | 1  | Math Detective Agency |
 | 21. | **PANDRAJU POORVI PRAVALLIKA** | [poorvipravallika06](https://github.com/poorvipravallika06) | **6** | 1  | HCF/LCM Interactive Module |
-| 22. | **Krishna Gelra** | [KrishnaG-101](https://github.com/KrishnaG-101) | **5** | 1  | Language Puzzles Framework |
-| 23. | **Rukmender T** | [RukmenderT](https://github.com/RukmenderT) | **5** | 1  | Curiosity Mode |
-| 24. | **Disha Bansal** | [disha01bansal](https://github.com/disha01bansal) | **4** | 0  | — |
-| 25. | **pradeep-gupta7**<br/><sub>↳ also commits as <b>Pradeep-gupta7</b></sub> | [pradeep-gupta7](https://github.com/pradeep-gupta7) | **3** | 0  | — |
-| 26. | **S. Hamsalekha**<br/><sub>↳ also commits as <b>S Hamsalekha</b></sub> | [S-Hamsalekha-annamai](https://github.com/S-Hamsalekha-annamai) | **3** | 1  | Track User Progress |
-| 27. | **disha-singh**<br/><sub>↳ also commits as <b>Disha Singh</b></sub> | [disha-singh](https://github.com/disha-singh) | **2** | 0  | — |
-| 28. | **Remy baastin rayappan** | [remy-baastin](https://github.com/remy-baastin) | **2** | 1  | — |
-| 29. | **harsh**<br/><sub>↳ also commits as <b>Harsh</b></sub> | [harsh](https://github.com/harsh) | **2** | 0  | — |
-| 30. | **Anshul Kanodia** | [AnshulKanodia](https://github.com/AnshulKanodia) | **2** | 0  | Geometry Game Restoration |
-| 31. | **jinal-gupta**<br/><sub>↳ also commits as <b>JINAL GUPTA</b></sub> | [jinal-gupta](https://github.com/jinal-gupta) | **1** | 0  | — |
-| 32. | **athira-kv**<br/><sub>↳ also commits as <b>Athira Kv</b></sub> | [athira-kv](https://github.com/athira-kv) | **1** | 0  | — |
-| 33. | **code-zero07**<br/><sub>↳ also commits as <b>Code-Zero07</b></sub> | [code-zero07](https://github.com/code-zero07) | **1** | 0  | — |
-| 34. | **garv-arora**<br/><sub>↳ also commits as <b>Garv Arora</b></sub> | [garv-arora](https://github.com/garv-arora) | **1** | 0  | — |
-| 35. | **pradeep-gupta**<br/><sub>↳ also commits as <b>Pradeep Gupta</b></sub> | [pradeep-gupta](https://github.com/pradeep-gupta) | **1** | 0  | — |
-| 36. | **priyanshu-kumar**<br/><sub>↳ also commits as <b>Priyanshu Kumar</b></sub> | [priyanshu-kumar](https://github.com/priyanshu-kumar) | **1** | 0  | — |
-| 37. | **Vasuki** | [vasuki-tenali](https://github.com/vasuki-tenali) | **1** | 0  | Infra contributor |
+| 22. | **cursor-agent**<br/><sub>↳ also commits as <b>Cursor Agent</b></sub> | [cursor-agent](https://github.com/cursor-agent) | **5** | 0  | — |
+| 23. | **Krishna Gelra** | [KrishnaG-101](https://github.com/KrishnaG-101) | **5** | 1  | Language Puzzles Framework |
+| 24. | **Rukmender T** | [RukmenderT](https://github.com/RukmenderT) | **5** | 1  | Curiosity Mode |
+| 25. | **Disha Bansal** | [disha01bansal](https://github.com/disha01bansal) | **4** | 0  | — |
+| 26. | **pradeep-gupta7**<br/><sub>↳ also commits as <b>Pradeep-gupta7</b></sub> | [pradeep-gupta7](https://github.com/pradeep-gupta7) | **3** | 0  | — |
+| 27. | **S. Hamsalekha**<br/><sub>↳ also commits as <b>S Hamsalekha</b></sub> | [S-Hamsalekha-annamai](https://github.com/S-Hamsalekha-annamai) | **3** | 1  | Track User Progress |
+| 28. | **nirmal-np**<br/><sub>↳ also commits as <b>Nirmal_np</b></sub> | [nirmal-np](https://github.com/nirmal-np) | **2** | 0  | — |
+| 29. | **lalithasriharshitha**<br/><sub>↳ also commits as <b>LalithaSriHarshitha</b></sub> | [lalithasriharshitha](https://github.com/lalithasriharshitha) | **2** | 0  | — |
+| 30. | **disha-singh**<br/><sub>↳ also commits as <b>Disha Singh</b></sub> | [disha-singh](https://github.com/disha-singh) | **2** | 0  | — |
+| 31. | **Remy baastin rayappan** | [remy-baastin](https://github.com/remy-baastin) | **2** | 1  | — |
+| 32. | **harsh**<br/><sub>↳ also commits as <b>Harsh</b></sub> | [harsh](https://github.com/harsh) | **2** | 0  | — |
+| 33. | **Anshul Kanodia** | [AnshulKanodia](https://github.com/AnshulKanodia) | **2** | 0  | Geometry Game Restoration |
+| 34. | **dynosuprovo**<br/><sub>↳ also commits as <b>DYNOSuprovo</b></sub> | [dynosuprovo](https://github.com/dynosuprovo) | **1** | 0  | — |
+| 35. | **jinal-gupta**<br/><sub>↳ also commits as <b>JINAL GUPTA</b></sub> | [jinal-gupta](https://github.com/jinal-gupta) | **1** | 0  | — |
+| 36. | **athira-kv**<br/><sub>↳ also commits as <b>Athira Kv</b></sub> | [athira-kv](https://github.com/athira-kv) | **1** | 0  | — |
+| 37. | **code-zero07**<br/><sub>↳ also commits as <b>Code-Zero07</b></sub> | [code-zero07](https://github.com/code-zero07) | **1** | 0  | — |
+| 38. | **garv-arora**<br/><sub>↳ also commits as <b>Garv Arora</b></sub> | [garv-arora](https://github.com/garv-arora) | **1** | 0  | — |
+| 39. | **pradeep-gupta**<br/><sub>↳ also commits as <b>Pradeep Gupta</b></sub> | [pradeep-gupta](https://github.com/pradeep-gupta) | **1** | 0  | — |
+| 40. | **priyanshu-kumar**<br/><sub>↳ also commits as <b>Priyanshu Kumar</b></sub> | [priyanshu-kumar](https://github.com/priyanshu-kumar) | **1** | 0  | — |
+| 41. | **Vasuki** | [vasuki-tenali](https://github.com/vasuki-tenali) | **1** | 0  | Infra contributor |
 <!-- live-rank:end -->
 
 

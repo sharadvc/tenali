@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import EquationSandbox from '../components/concept/EquationSandbox';
-import { updateBKT } from '../bkt.js';
+import { logConceptAttempt } from './concept/conceptApi';
 import confetti from 'canvas-confetti';
 
 const LEVELS = [
@@ -56,10 +56,10 @@ const LEVELS = [
   }
 ];
 
-export default function EquationSandboxApp({ user, onBack, initialAdaptScore = 0.5 }) {
+export default function EquationSandboxApp({ onBack }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const [localAdaptScore, setLocalAdaptScore] = useState(initialAdaptScore);
   const [attemptsThisLevel, setAttemptsThisLevel] = useState(0);
+  const [saveError, setSaveError] = useState(null);
 
   if (!selectedLevel) {
     return (
@@ -125,29 +125,29 @@ export default function EquationSandboxApp({ user, onBack, initialAdaptScore = 0
 
     // Score based on how few attempts were needed (1 attempt = perfect, 10 attempts = flailing)
     const proxyScore = Math.max(0, 1 - (attemptsThisLevel / 10));
-    
-    // Update local BKT
-    const nextScore = updateBKT(localAdaptScore, false, undefined, { proximityScore: proxyScore, attempts: attemptsThisLevel });
-    setLocalAdaptScore(nextScore);
 
-    // Save telemetry to backend
+    // No client-side BKT. Mastery is server-authoritative (#288). The previous
+    // local call also passed isCorrect: false on this, the success path, which
+    // would have moved mastery the wrong way had the value ever been rendered.
+    // It was written to state that nothing read, so nothing is lost by removing
+    // the computation outright rather than fixing the flag.
+
+    // Save telemetry to the backend. Identity comes from the JWT, not the body.
+    setSaveError(null);
     try {
-      await fetch('/api/concept-playgrounds/attempt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          skillId: selectedLevel.skillId,
-          classLevel: selectedLevel.classLevel,
-          templateUsed: 'EquationSandbox',
-          proximityScore: proxyScore,
-          attempts: attemptsThisLevel,
-          selfExplanationText: finalEquation,
-          match: true
-        })
+      await logConceptAttempt({
+        skillId: selectedLevel.skillId,
+        classLevel: selectedLevel.classLevel,
+        templateUsed: 'EquationSandbox',
+        proximityScore: proxyScore,
+        attempts: attemptsThisLevel,
+        selfExplanationText: finalEquation,
+        match: true
       });
     } catch (e) {
-      console.error("Failed to save attempt", e);
+      // Visible, not swallowed.
+      console.error('Failed to save attempt', e);
+      setSaveError(e.isAuthError ? 'Session expired, that attempt was not saved.' : 'That attempt could not be saved.');
     }
 
     // Wait a moment then return to level select
@@ -169,6 +169,12 @@ export default function EquationSandboxApp({ user, onBack, initialAdaptScore = 0
         <div style={{ width: '60px' }}></div> {/* Spacer for centering */}
       </div>
       
+      {saveError && (
+        <div style={{ padding: '8px 20px', background: 'var(--clr-surface-alt)', color: 'var(--clr-text)', borderBottom: '1px solid var(--clr-border)', textAlign: 'center' }}>
+          {saveError}
+        </div>
+      )}
+
       <div style={{ flex: 1 }}>
         <EquationSandbox 
           levelConfig={selectedLevel} 
