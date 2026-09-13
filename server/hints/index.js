@@ -29,6 +29,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const auth = require('../auth');
+const { generateExplanation } = require('../explanations');
 const hintSpecs = require('./hintSpecs');
 const hintResolvers = require('./hintResolvers');
 
@@ -113,11 +114,10 @@ function tryDecodeUser(req) {
 }
 
 // ─── Explanation generator passthrough ───────────────────────────────────────
-// server/index.js exposes generateExplanation on the global object once it has
-// been defined. We re-publish a thin wrapper here so the registry can stay
-// agnostic.
+// Uses generateExplanation from server/explanations to provide canonical
+// worked solutions for level 3 hints.
 function buildExplanation(reqPath, questionData, answerData) {
-  if (typeof global.generateExplanation !== 'function') return '';
+  if (typeof generateExplanation !== 'function') return '';
   // If the client didn't supply answerData, try the concept's resolver to
   // compute a canonical worked-example answer from the question data alone.
   // This makes L3 hints self-contained — user doesn't need to /check first.
@@ -144,7 +144,7 @@ function buildExplanation(reqPath, questionData, answerData) {
     }
   }
   try {
-    return global.generateExplanation(
+    return generateExplanation(
       { path: reqPath || '/basicarith-api/check', body: questionData || {} },
       augmentedAnswerData || {}
     ) || '';
