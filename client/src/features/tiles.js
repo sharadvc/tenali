@@ -56,6 +56,7 @@ export const TILES = [
     { key: 'log', name: 'Logarithms', subtitle: 'Evaluate, simplify, solve', color: 'purple', category: 'algebra' },
     { key: 'matrix', name: 'Matrices', subtitle: 'Add, multiply, determinant', color: 'blue', category: 'linear-algebra' },
     { key: 'mensur', name: 'Mensuration', subtitle: 'Area, volume, surface area', color: 'green', category: 'shape-space' },
+    { key: 'math-lab', name: '🔬 Visual Learning Universe', subtitle: 'Visual, Mensuration & Addition labs', color: 'orange', category: 'shape-space' },
     { key: 'multiply', name: 'Multiplication', subtitle: 'Practice any times table (2–19)', color: 'purple', category: 'number-foundations' },
     { key: 'bases', name: 'Number Bases', subtitle: 'Binary, decimal, hexadecimal', color: 'green', category: 'number-foundations' },
     { key: 'basic-arith-lab', name: 'Origin', subtitle: 'Practice +, -, ×, ÷ with varied templates', color: 'blue', category: 'number-foundations', foldInto: 'basicarith' },
@@ -70,6 +71,7 @@ export const TILES = [
     { key: 'pythag', name: "Pythagoras' Theorem", subtitle: 'Hypotenuse, legs, 3D', color: 'green', category: 'shape-space' },
     { key: 'quadratic', name: 'Quadratic', subtitle: 'Find y for y = ax² + bx + c', color: 'blue', category: 'algebra' },
     { key: 'qformula', name: 'Quadratics (Formula)', subtitle: 'Find roots of ax² + bx + c = 0', color: 'purple', category: 'algebra' },
+    { key: 'qformula-concept', name: 'Quadratics: Concept Lab', subtitle: 'Five-stage concept mastery, then free practice', color: 'purple', category: 'algebra' },
     { key: 'ratio', name: 'Ratio', subtitle: 'Ratio & proportion', color: 'green', category: 'everyday-maths' },
     { key: 'remfactor', name: 'Remainder Theorem', subtitle: 'Remainder & factor theorem', color: 'blue', category: 'algebra' },
     { key: 'rounding', name: 'Rounding', subtitle: 'D.P., sig. figs, estimation', color: 'blue', category: 'number-foundations' },
@@ -80,6 +82,7 @@ export const TILES = [
     { key: 'similarity', name: 'Similarity', subtitle: 'Scale factor, area & volume ratios', color: 'green', category: 'shape-space' },
     { key: 'squaring', name: 'Squaring', subtitle: 'Square numbers using (a+b)²', color: 'purple', category: 'number-foundations' },
     { key: 'simul', name: 'Sim. Equations', subtitle: '2×2 (easy) or 3×3 (hard)', color: 'purple', category: 'algebra' },
+    { key: 'simul-concept', name: 'Sim. Equations: Concept Lab', subtitle: 'Five-stage concept mastery, then free practice', color: 'purple', category: 'algebra' },
     { key: 'sdt', name: 'Speed, Distance, Time', subtitle: 'Rate problems & conversions', color: 'blue', category: 'everyday-maths' },
     { key: 'sqrt', name: 'Square Root', subtitle: 'Nearest-integer square root drill', color: 'green', category: 'algebra' },
     { key: 'stdform', name: 'Standard Form', subtitle: 'Scientific notation operations', color: 'purple', category: 'algebra' },
@@ -117,7 +120,7 @@ export const FEATURED_TILES = [
     { key: 'vachana', name: 'Vachana', subtitle: 'Mathematical Literacy Lab', color: 'featured' },
 ]
 
-// Visual Learning Universe lives only in the hamburger menu (#191).
+// Hamburger pin for Visual Learning Universe (#191); also on home grid (#216).
 export const MATH_LAB_ENTRY = { key: 'math-lab', name: '🔬 Visual Learning Universe', subtitle: 'Visual, Mensuration & Addition labs', color: 'orange' }
 
 // GEOCRAFT_ENTRY is the only tile-shaped object carrying isRedirect/path (#191).

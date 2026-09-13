@@ -1,45 +1,56 @@
+'use strict';
+
 const express = require('express');
 const mongoose = require('mongoose');
+const ConceptPlayAttempt = require('./models/ConceptPlayAttempt');
+const auth = require('./auth');
+
+// Telemetry accepts any playground template's skill id, not just the two skills
+// that have a staged flow (EquationSandbox uses 'sandbox_trig', for example).
+// This is a log, not a mastery write, so the strict CONCEPT_SKILLS allowlist in
+// lib/conceptSkills.js guards the session routes instead.
+const SKILL_ID_PATTERN = /^[a-z0-9_-]{1,64}$/i;
 
 const router = express.Router();
 
-// Define Mongoose Schema for Concept Playgrounds Telemetry
-const ConceptPlayAttemptSchema = new mongoose.Schema({
-  userId: { type: String, required: true }, // can be username or ObjectId
-  skillId: { type: String, required: true },
-  classLevel: { type: String, required: true },
-  templateUsed: { type: String, required: true },
-  proximityScore: { type: Number, required: true },
-  attempts: { type: Number, required: true },
-  selfExplanationText: { type: String },
-  match: { type: Boolean },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const ConceptPlayAttempt = mongoose.model('ConceptPlayAttempt', ConceptPlayAttemptSchema);
-
-// Endpoint to log a struggle attempt
-router.post('/attempt', async (req, res) => {
+// Log a Concept Playground struggle attempt.
+//
+// Telemetry only. Mastery is updated through lil/processAttempt from
+// conceptSession.js; nothing here computes or stores a mastery number.
+router.post('/attempt', auth.requireAuth, async (req, res) => {
   try {
-    const { 
-      skillId, 
-      classLevel, 
-      templateUsed, 
-      proximityScore, 
-      attempts, 
-      selfExplanationText, 
-      match 
+    const {
+      skillId,
+      classLevel,
+      templateUsed,
+      proximityScore,
+      attempts,
+      selfExplanationText,
+      match
     } = req.body;
 
-    const userId = req.body.userId || 'anonymous';
+    // Identity comes from the token, never from the body.
+    const learnerId = req.user.id;
 
-    // Fast fail if mongoose is not connected
+    if (typeof skillId !== 'string' || !SKILL_ID_PATTERN.test(skillId)) {
+      return res.status(400).json({ success: false, error: 'invalid skillId' });
+    }
+    if (!templateUsed || typeof templateUsed !== 'string') {
+      return res.status(400).json({ success: false, error: 'templateUsed is required' });
+    }
+    if (typeof proximityScore !== 'number' || Number.isNaN(proximityScore)) {
+      return res.status(400).json({ success: false, error: 'proximityScore must be a number' });
+    }
+    if (!Number.isInteger(attempts) || attempts < 0) {
+      return res.status(400).json({ success: false, error: 'attempts must be a non-negative integer' });
+    }
+
     if (mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: false, message: "Mongo not connected" });
+      return res.status(503).json({ success: false, error: 'Mongo not connected' });
     }
 
     const attempt = new ConceptPlayAttempt({
-      userId,
+      learnerId,
       skillId,
       classLevel,
       templateUsed,
@@ -48,12 +59,12 @@ router.post('/attempt', async (req, res) => {
       selfExplanationText,
       match
     });
-
     await attempt.save();
-    res.status(200).json({ success: true, message: "Attempt logged successfully." });
+
+    res.status(201).json({ success: true, attemptId: attempt._id });
   } catch (error) {
-    console.error("[ConceptPlay] Error saving attempt:", error);
-    res.status(200).json({ success: false, error: "Database error, but progressing." });
+    console.error('[ConceptPlay] Error saving attempt:', error.message);
+    res.status(500).json({ success: false, error: 'Database error' });
   }
 });
 

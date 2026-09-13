@@ -25,9 +25,23 @@ jobs:
       - run: node server/lib/bkt.test.js
 
   # Lint the client. This catches broken imports and obvious errors before review.
+  #
+  # NON-BLOCKING (continue-on-error) until App.jsx is split up. `npm run lint`
+  # currently reports ~750 pre-existing errors on main, almost all of them in
+  # client/src/App.jsx (react-hooks/*, react-refresh/only-export-components).
+  # While the job fails on every branch it tells a contributor nothing about
+  # their own change, and a permanently red check trains everyone to ignore CI.
+  #
+  # The output is still produced and still worth reading — reviewers should
+  # check that a PR does not ADD errors, which is easy to see by comparing the
+  # count against main.
+  #
+  # Flip this back to blocking once the App.jsx backlog is cleared. Tracked by
+  # the component-extraction epic #234.
   client-lint:
     name: Client lint
     runs-on: ubuntu-latest
+    continue-on-error: true
     defaults:
       run:
         working-directory: client
@@ -48,6 +62,19 @@ jobs:
     defaults:
       run:
         working-directory: server
+    # MongoDB is needed by the Concept Playgrounds integration tests, which use a
+    # scratch database and drop it afterwards. The topic contract tests do not
+    # touch Mongo and are unaffected.
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

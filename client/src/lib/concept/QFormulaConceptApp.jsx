@@ -1,113 +1,139 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Stage1Predict from './Stage1Predict';
 import Stage2Derivation from './Stage2Derivation';
 import Stage3Guided from './Stage3Guided';
 import Stage4Independent from './Stage4Independent';
 import Stage5Review from './Stage5Review';
 import CompletionScreen from './CompletionScreen';
+import { fetchConceptState, saveConceptStage, startConceptReview } from './conceptApi';
 
-
-// Get or create anonymous learner ID
-const getLearnerId = () => {
-  let id = localStorage.getItem('tenali_learner_id');
-  if (!id) {
-    id = 'anon_' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('tenali_learner_id', id);
-  }
-  return id;
-};
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const SKILL_ID = 'qformula';
 
 export default function QFormulaConceptApp({ onBack, QFormulaApp }) {
-  const [learnerId] = useState(getLearnerId());
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
+  // Initial load. State is only touched after the await, so the effect body
+  // itself performs no synchronous setState, and a unmount mid-flight is a
+  // no-op rather than a warning.
   useEffect(() => {
-    fetchState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [learnerId]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const next = await fetchConceptState(SKILL_ID);
+        if (!cancelled) setState(next);
+      } catch (err) {
+        if (!cancelled) setError(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const fetchState = async () => {
+  const retryLoad = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API}/api/concept-session/qformula/state/${learnerId}`);
-      if (!res.ok) throw new Error('Failed to fetch state');
-      const data = await res.json();
-      setState(data);
+      setState(await fetchConceptState(SKILL_ID));
     } catch (err) {
-      setError(err.message);
+      setError(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleStageComplete = async (stageIndex, sessionData) => {
-    // Optimistic UI update - instantly advance to next stage!
-    setState(prev => ({
-      ...prev,
-      conceptReviewRung: stageIndex
-    }));
-
+    setSaving(true);
+    setError(null);
     try {
-      const res = await fetch(`${API}/api/concept-session/qformula/session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          learnerId,
-          stageIndex,
-          completedStages: [stageIndex], // Prevent backend TypeError
-          ...sessionData
-        })
-      });
-      if (!res.ok) throw new Error('Failed to save session');
-      const data = await res.json();
-      
-      // Update next review date if the server sent one
-      if (data.nextConceptReviewDue) {
-        setState(prev => ({
-          ...prev,
-          nextConceptReviewDue: data.nextConceptReviewDue
-        }));
-      }
+      // The server returns the authoritative state, including currentStage.
+      // We do not advance the stage locally: a save that fails must not look
+      // like progress the learner has actually banked.
+      setState(await saveConceptStage(SKILL_ID, stageIndex, sessionData));
     } catch (err) {
-      console.error('Error saving session:', err);
-      // Optionally handle error visually
+      setError(err);
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading) return <div className="quiz-layout"><div className="welcome-box">Loading...</div></div>;
-  if (error) return <div className="quiz-layout"><div className="welcome-box">Error: {error}</div></div>;
+  const handleStartReview = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      setState(await startConceptReview(SKILL_ID));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const currentStage = state.conceptReviewRung || 0;
-  const _isDue = state.nextConceptReviewDue ? new Date() >= new Date(state.nextConceptReviewDue) : true;
+  if (loading) {
+    return <div className="quiz-layout"><div className="welcome-box">Loading your progress...</div></div>;
+  }
 
-  // BKT mastery derived from stage progress (5 stages total: 0-4)
-  const totalStages = 5;
-  const _mastery = Math.min(1, (currentStage / totalStages) + 0.04); // +0.04 so stage 0 shows ~4% rather than 0%
+  if (error && !state) {
+    return (
+      <div className="quiz-layout">
+        <div className="welcome-box">
+          <h3>{error.isAuthError ? 'Please log in' : 'Could not load your progress'}</h3>
+          <p>{error.isAuthError
+            ? 'Your session has expired. Log in again to pick up where you left off.'
+            : error.message}</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
+            {!error.isAuthError && <button className="primary-btn" onClick={retryLoad}>Try again</button>}
+            <button className="secondary-btn" onClick={onBack}>Back</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentStage = state.currentStage || 0;
+  const stageCount = state.stageCount || 5;
 
   return (
     <div className="quiz-layout qformula-concept">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <button className="back-btn" onClick={onBack}>← Back</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontWeight: 'bold' }}>Quadratic Formula: Concept Mastery</div>
-        </div>
+        <div style={{ fontWeight: 'bold' }}>Quadratic Formula: Concept Mastery</div>
         <div style={{ width: '60px' }}></div>
       </div>
 
-      <div className="concept-container">
-        {currentStage === 0 && <Stage1Predict onComplete={(data) => handleStageComplete(1, data)} />}
-        {currentStage === 1 && <Stage2Derivation onComplete={(data) => handleStageComplete(2, data)} />}
-        {currentStage === 2 && <Stage3Guided onComplete={(data) => handleStageComplete(3, data)} />}
-        {currentStage === 3 && <Stage4Independent onComplete={(data) => handleStageComplete(4, data)} />}
-        
-        {/* If they are at stage 4 (completed independent), they do Spaced Review or Finish */}
-        {currentStage >= 4 && (
-          <CompletionScreen onBack={onBack} nextReviewDue={state.nextConceptReviewDue} QFormulaApp={QFormulaApp} />
+      {state.persisted === false && (
+        <div className="welcome-box" style={{ marginBottom: '1rem' }}>
+          Working offline: your progress will not be saved this session.
+        </div>
+      )}
+
+      {/* A save that failed while progress is on screen must be visible, not swallowed. */}
+      {error && (
+        <div className="welcome-box" style={{ marginBottom: '1rem' }}>
+          <strong>{error.isAuthError ? 'Session expired.' : 'Could not save that stage.'}</strong>{' '}
+          {error.isAuthError ? 'Log in again to save your progress.' : error.message}
+        </div>
+      )}
+
+      <div className="concept-container" aria-busy={saving}>
+        {currentStage === 0 && <Stage1Predict onComplete={(d) => handleStageComplete(1, d)} />}
+        {currentStage === 1 && <Stage2Derivation onComplete={(d) => handleStageComplete(2, d)} />}
+        {currentStage === 2 && <Stage3Guided onComplete={(d) => handleStageComplete(3, d)} />}
+        {currentStage === 3 && <Stage4Independent onComplete={(d) => handleStageComplete(4, d)} />}
+        {currentStage === 4 && <Stage5Review currentRung={state.conceptReviewRung} onComplete={(d) => handleStageComplete(5, d)} />}
+
+        {currentStage >= stageCount && (
+          <CompletionScreen
+            onBack={onBack}
+            nextReviewDue={state.nextConceptReviewDue}
+            isSpacedReplayDue={state.isSpacedReplayDue}
+            onStartReview={handleStartReview}
+            mastery={state.mastery}
+            PracticeApp={QFormulaApp}
+          />
         )}
       </div>
     </div>

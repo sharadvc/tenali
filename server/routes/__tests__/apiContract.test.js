@@ -17,7 +17,7 @@ const TOPICS = [
   'matrix', 'mensur', 'bearings', 'log', 'diff',
   'integ', 'bases', 'stdform', 'bounds', 'sdt', 'variation', 'squaring',
   'rounding', 'binomial', 'complex', 'angles', 'triangles', 'congruence',
-  'polygons', 'similarity', 'dotprod', 'permcomb', 'limits', 'invtrig',
+  'polygons', 'similarity', 'circleth', 'dotprod', 'permcomb', 'limits', 'invtrig',
   'remfactor', 'shares', 'banking', 'gst', 'section', 'linprog',
   'circmeasure', 'conics', 'diffeq', 'hcflcm', 'profitloss', 'decimals',
   'addition', 'multiply', 'basicarith',
