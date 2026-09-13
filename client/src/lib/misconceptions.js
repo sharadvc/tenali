@@ -470,7 +470,7 @@ export const misconceptionMap = {
     ],
   },
 
-  'circle-api': {
+  'circleth-api': {
     question: 'Solve the circle problem',
     defaultHint: 'Circumference = 2πr, Area = πr². Arc length = (θ/360)×2πr. Sector area = (θ/360)×πr².',
     misconceptions: [

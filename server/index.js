@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TENALI - Educational Quiz Platform Server
  *
  * A comprehensive Node.js/Express server that powers an educational quiz and math problem-solving platform.
@@ -52,6 +52,7 @@ const path = require('path');
 const http = require('http');
 const wordCreator = require('./wordCreator');
 const logger = require('./lib/logger');
+const { generateExplanation } = require('./explanations');
 
 // Catch what would otherwise be a silent crash (or, for unhandled promise
 // rejections on Node 15+, a crash with no application-level record of why).
@@ -136,6 +137,14 @@ app.use('/api/auth', auth.router);
 app.use('/api/progress', progress.router);
 app.use('/api/hints', hints);
 app.use('/api/translate', translate.router);
+
+// ── Concept Playgrounds ──────────────────────────────────────────────────────
+// The 5-stage conceptual loop that fronts the qformula and simul drills.
+// Both routers authenticate every request; learner identity is the JWT `sub`.
+const conceptSession = require('./conceptSession');
+const conceptPlay = require('./conceptPlay');
+app.use('/api/concept-session', conceptSession);
+app.use('/api/concept-playgrounds', conceptPlay);
 const treasurehuntRouter = require('./treasurehunt/routes');
 
 console.log("Treasure router imported");
@@ -536,9 +545,6 @@ app.use(async (req, res, next) => {
 });
 
 
-const { generateExplanation } = require('./explanations');
-global.generateExplanation = generateExplanation;
-
 // ── Extracted topic routers (Phase 2) ────────────────────────────────────────
 const arithmeticRouter = require('./routes/arithmetic');
 app.use('/addition-api',  arithmeticRouter);
@@ -616,7 +622,7 @@ app.use('/trig-api',      geometryRouter);
 app.use('/pythag-api',    geometryRouter);
 app.use('/heron-api',     geometryRouter);
 app.use('/coordgeom-api', geometryRouter);
-app.use('/circle-api',    geometryRouter);
+app.use('/circleth-api',  geometryRouter);
 
 const advancedRouter = require('./routes/advanced');
 app.use('/matrix-api',     advancedRouter);

@@ -72,9 +72,11 @@ export function QuizLayout({ title, subtitle, onBack, children, timer, sessionGo
         </div>
       </div>
       <h1 style={{ fontSize: 'clamp(1.8rem, 3.8vw, 2.4rem)' }}>{title}</h1>
+      {subtitle && <p className="quiz-subtitle">{subtitle}</p>}
       {processedChildren}
     </>
   );
 }
+
 
 export default QuizLayout;

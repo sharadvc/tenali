@@ -255,7 +255,6 @@ export function getTopicLabel(topicKey) {
  */
 const API_OVERRIDES = {
   spot: 'twinhunt-api',
-  circleth: 'circle-api',
   lineareq: 'lineareq-api',
 }
 
