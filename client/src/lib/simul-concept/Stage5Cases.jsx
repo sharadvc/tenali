@@ -11,16 +11,9 @@ export default function Stage5Cases({ onComplete }) {
     e.preventDefault();
     if (!explanation.trim()) return;
     
-    // Lightweight keyword match
-    const keywords = ['parallel', 'never', 'meet', 'intersect', 'cross', 'same slope', 'different'];
-    const lowerExp = explanation.toLowerCase();
-    const keywordMatch = keywords.some(kw => lowerExp.includes(kw));
-
+    // The keyword match is computed in handleFinish, which is where the stage
+    // is actually reported complete. Submitting only reveals the model answer.
     setSubmitted(true);
-    
-    // We don't block on this, we just pass it to onComplete
-    // Wait, onComplete should probably only be called when they click "Finish"
-    // So we just store it in state for now, and call onComplete when they click "Finish Module"
   };
 
   const handleFinish = () => {

@@ -5,7 +5,9 @@ import 'mafs/font.css';
 
 export default function Stage4Elimination({ onComplete }) {
   const [step, setStep] = useState(0);
-  const [prediction, setPrediction] = useState(null);
+  // The prediction is recorded for the stepper's own branching only; nothing
+  // reads it back, so the binding is intentionally omitted.
+  const [, setPrediction] = useState(null);
   const [completed, setCompleted] = useState(false);
 
   const handleNext = () => {

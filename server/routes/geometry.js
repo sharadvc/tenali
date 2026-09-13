@@ -369,7 +369,7 @@ const generators = {
     },
   },
 
-  circle: {
+  circleth: {
     question(difficulty) {
       difficulty = difficulty || 'easy';
       const id = Date.now();
