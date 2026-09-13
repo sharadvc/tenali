@@ -87,9 +87,7 @@ async function getQuestionForConcept(conceptKey) {
   }
 
   let endpoint = `${conceptKey}-api`;
-  if (conceptKey === 'circleth') {
-    endpoint = 'circle-api';
-  } else if (conceptKey === 'gk') {
+  if (conceptKey === 'gk') {
     endpoint = 'gk-api';
   } else if (conceptKey === 'vocab') {
     endpoint = 'vocab-api';

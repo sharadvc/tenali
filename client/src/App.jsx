@@ -112,6 +112,28 @@ import GeometryApp from './GeometryApp';
 import EquationSandboxApp from './lib/EquationSandboxApp.jsx';
 import QFormulaConceptApp from './lib/concept/QFormulaConceptApp.jsx';
 import SimulConceptApp from './lib/simul-concept/SimulConceptApp.jsx';
+
+// Concept Playgrounds entry points.
+//
+// modeMap renders <ActiveApp {...standardProps} />, which cannot supply the
+// topic's quiz component, so each concept app gets a thin wrapper that passes
+// it in. The quiz apps themselves are unchanged and their own tiles still work.
+// Both are login-gated: the concept session API authenticates every request.
+function QFormulaConceptMode({ onBack }) {
+  return (
+    <AuthGate>
+      <QFormulaConceptApp onBack={onBack} QFormulaApp={QFormulaApp} />
+    </AuthGate>
+  );
+}
+
+function SimulConceptMode({ onBack }) {
+  return (
+    <AuthGate>
+      <SimulConceptApp onBack={onBack} SimulQuizApp={SimulApp} />
+    </AuthGate>
+  );
+}
 import DiagnosticQuiz from './lib/DiagnosticQuiz.jsx';
 import { useI18n } from './lib/i18n.jsx';
 import CuriosityApp from './Curiosity.jsx';
@@ -44784,7 +44806,9 @@ function App() {
     polyfactor: PolyFactorApp,     // Polynomial factoring
     primefactor: PrimeFactorApp,   // Prime factorization
     qformula: QFormulaApp,         // Quadratic formula
+    'qformula-concept': QFormulaConceptMode, // Quadratic formula — 5-stage concept lab
     simul: SimulApp,               // Simultaneous equations
+    'simul-concept': SimulConceptMode,       // Simultaneous equations — 5-stage concept lab
     funceval: FuncEvalApp,         // Function evaluation
     lineq: LineEqApp,              // Line equation
     basicarith: BasicArithApp,     // Basic arithmetic (+, −, ×)
@@ -44863,7 +44887,7 @@ function App() {
     polygym: PolyGymApp,           // Polynomials Gym — arithmetic → monomial algebra (MCQ)
     treasurehunt: TreasureHuntApp, // Treasure Hunt — solve & seek grid game
     // matrixmystics mode removed — Matrix Mystics content now embedded in LinearAlgebraApp's mission quiz
-    trackProgress: null,
+    trackProgress: ProgressTrackerApp,
     riddle: RiddleApp,              // Math Riddles
     'water-jug-lab': WaterJugLab,
     'equation-crafting-lab': EquationCraftingLab,
@@ -44943,10 +44967,6 @@ function App() {
           }}
         />
       );
-    }
-
-    if (mode === 'trackProgress') {
-      return <ProgressTrackerApp onBack={() => setMode(null)} />;
     }
 
     if (ActiveApp) {
@@ -45039,6 +45059,7 @@ function App() {
       multiply: 'Multiplication Tables', vocab: 'Vocabulary', spot: 'Twin Hunt',
       sqrt: 'Square Root', polymul: 'Polynomial Multiplication', polyfactor: 'Polynomial Factoring',
       primefactor: 'Prime Factorization', qformula: 'Quadratic Formula', simul: 'Simultaneous Equations',
+      'qformula-concept': 'Quadratics: Concept Lab', 'simul-concept': 'Sim. Equations: Concept Lab',
       funceval: 'Functions', lineq: 'Line Equations', basicarith: 'Arithmetic',
       fractionadd: 'Fractions', surds: 'Surds', indices: 'Indices',
       sequences: 'Sequences & Series', ratio: 'Ratio & Proportion', percent: 'Percentages',
@@ -45562,18 +45583,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
   const isSearching = search.trim() !== ''
   const matchFilter = (a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.subtitle.toLowerCase().includes(search.toLowerCase())
   
-  // Under Goal Practice mode, we include Random Mix & Custom Lesson at the top of the grid list (omitting Gym since it does not support goals)
-  const goalFeatured = [
-    { key: 'randommix', name: 'Random Mix', subtitle: 'Adaptive cross-topic quiz', color: 'featured' },
-    { key: 'custom', name: 'Custom Lesson', subtitle: 'Build your own mixed quiz', color: 'featured' },
-  ]
-  
-  const filteredGoalFeatured = isSearching ? goalFeatured.filter(matchFilter) : goalFeatured
-  const filteredFeatured = isSearching ? featuredApps.filter(matchFilter) : featuredApps
   const filteredRegular = isSearching ? regularApps.filter(matchFilter) : regularApps
-  
-  // Decide which items to show on the main grid list
-  const displayGridApps = isGoalSelection ? filteredRegular : [...filteredRegular]
   const filteredHamburgerApps = isSearching ? hamburgerApps.filter(matchFilter) : hamburgerApps
 
   // Grid layout tracking (for responsive display)
@@ -45595,7 +45605,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
   }, [])
 
   // Calculate number of rows for display (for grid dimension label at bottom)
-  const rows = Math.ceil(displayGridApps.length / (cols || 1))
+  const rows = Math.ceil(filteredRegular.length / (cols || 1))
 
   return (
     <>
@@ -45802,7 +45812,7 @@ function Home({ onSelect, completedTopics = [], goldMastery = [], coins = 0, isG
         />
       </div>
       <div id="tour-home-grid" className="menu-grid" ref={gridRef}>
-        {displayGridApps.map((app) => {
+        {filteredRegular.map((app) => {
           const isGold = goldMastery && goldMastery.includes(app.key)
           const isCompleted = isStage3Completed(app.key, completedTopics)
           return (
@@ -56089,7 +56099,7 @@ const BasesApp = makeQuizApp({
 })
 
 const CircleThApp = makeQuizApp({
-  title: 'Circle Theorems', subtitle: 'Angles, tangents, cyclic quads', apiPath: 'circle-api', topicKey: 'circle-theorems',
+  title: 'Circle Theorems', subtitle: 'Angles, tangents, cyclic quads', apiPath: 'circleth-api', topicKey: 'circle-theorems',
   diffLabels: { easy: 'Easy — Semicircle', medium: 'Medium — Centre/Circum', hard: 'Hard — Cyclic quad', extrahard: 'Extra Hard — Tangent' },
   placeholders: 'e.g. 45',
 })
@@ -58258,7 +58268,7 @@ const RANDOM_MIX_TOPICS = [
   { key: 'log', name: 'Logarithms', api: 'log-api' },
   { key: 'diff', name: 'Differentiation', api: 'diff-api' },
   { key: 'bases', name: 'Number Bases', api: 'bases-api' },
-  { key: 'circleth', name: 'Circle Theorems', api: 'circle-api' },
+  { key: 'circleth', name: 'Circle Theorems', api: 'circleth-api' },
   { key: 'integ', name: 'Integration', api: 'integ-api' },
   { key: 'stdform', name: 'Standard Form', api: 'stdform-api' },
   { key: 'bounds', name: 'Bounds', api: 'bounds-api' },
@@ -64613,7 +64623,7 @@ function fetchQuestionForType(type, difficulty, qIndex = 0, sessionGoal = 'stand
     log: `${API}/log-api/question?difficulty=${difficulty}`,
     diff: `${API}/diff-api/question?difficulty=${difficulty}`,
     bases: `${API}/bases-api/question?difficulty=${difficulty}`,
-    circleth: `${API}/circle-api/question?difficulty=${difficulty}`,
+    circleth: `${API}/circleth-api/question?difficulty=${difficulty}`,
     integ: `${API}/integ-api/question?difficulty=${difficulty}`,
     stdform: `${API}/stdform-api/question?difficulty=${difficulty}`,
     bounds: `${API}/bounds-api/question?difficulty=${difficulty}`,
@@ -64655,7 +64665,6 @@ function fetchQuestionForType(type, difficulty, qIndex = 0, sessionGoal = 'stand
 }
 
 function getApiPathForType(type) {
-  if (type === 'circleth') return 'circle-api'
   return `${type}-api`
 }
 
@@ -65345,7 +65354,7 @@ const startQuiz = async () => {
       case 'remfactor': case 'heron': case 'shares': case 'banking': case 'gst':
       case 'section': case 'linprog': case 'circmeasure': case 'conics': case 'diffeq': {
         if (answer === '') return
-        const apiMap = { trig: 'trig-api', ineq: 'ineq-api', coordgeom: 'coordgeom-api', prob: 'prob-api', stats: 'stats-api', matrix: 'matrix-api', vectors: 'vectors-api', dotprod: 'dotprod-api', transform: 'transform-api', mensur: 'mensur-api', bearings: 'bearings-api', log: 'log-api', diff: 'diff-api', bases: 'bases-api', circleth: 'circle-api', integ: 'integ-api', stdform: 'stdform-api', bounds: 'bounds-api', sdt: 'sdt-api', variation: 'variation-api', hcflcm: 'hcflcm-api', profitloss: 'profitloss-api', rounding: 'rounding-api', binomial: 'binomial-api', complex: 'complex-api', angles: 'angles-api', triangles: 'triangles-api', congruence: 'congruence-api', pythag: 'pythag-api', polygons: 'polygons-api', similarity: 'similarity-api', squaring: 'squaring-api', tatsavit: 'tatsavit-api', lineareq: 'lineareq-api', decimals: 'decimals-api', permcomb: 'permcomb-api', limits: 'limits-api', invtrig: 'invtrig-api', remfactor: 'remfactor-api', heron: 'heron-api', shares: 'shares-api', banking: 'banking-api', gst: 'gst-api', section: 'section-api', linprog: 'linprog-api', circmeasure: 'circmeasure-api', conics: 'conics-api', diffeq: 'diffeq-api' }
+        const apiMap = { trig: 'trig-api', ineq: 'ineq-api', coordgeom: 'coordgeom-api', prob: 'prob-api', stats: 'stats-api', matrix: 'matrix-api', vectors: 'vectors-api', dotprod: 'dotprod-api', transform: 'transform-api', mensur: 'mensur-api', bearings: 'bearings-api', log: 'log-api', diff: 'diff-api', bases: 'bases-api', circleth: 'circleth-api', integ: 'integ-api', stdform: 'stdform-api', bounds: 'bounds-api', sdt: 'sdt-api', variation: 'variation-api', hcflcm: 'hcflcm-api', profitloss: 'profitloss-api', rounding: 'rounding-api', binomial: 'binomial-api', complex: 'complex-api', angles: 'angles-api', triangles: 'triangles-api', congruence: 'congruence-api', pythag: 'pythag-api', polygons: 'polygons-api', similarity: 'similarity-api', squaring: 'squaring-api', tatsavit: 'tatsavit-api', lineareq: 'lineareq-api', decimals: 'decimals-api', permcomb: 'permcomb-api', limits: 'limits-api', invtrig: 'invtrig-api', remfactor: 'remfactor-api', heron: 'heron-api', shares: 'shares-api', banking: 'banking-api', gst: 'gst-api', section: 'section-api', linprog: 'linprog-api', circmeasure: 'circmeasure-api', conics: 'conics-api', diffeq: 'diffeq-api' }
         const genPayload = { ...question, userAnswer: answer.trim() }
         res = await fetch(`${API}/${apiMap[curType]}/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(genPayload) })
         data = await res.json()
